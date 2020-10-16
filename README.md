@@ -6,8 +6,8 @@ Request suggestions for a track using its ```title``` and ```artist```.
 
 ```
 const axios = require("axios"),
-      base_url = "http://localhost:8000",
-      predict_endpoint = base_url + "/predict";
+      base_url = "https://suggestify-api.herokuapp.com/",
+      predict_endpoint = base_url + "predict";
 
 
 function requestSuggestions (artist, title) {
