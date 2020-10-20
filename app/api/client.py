@@ -54,7 +54,7 @@ class SpotifyClient:
         return False
 
     return [track["id"] for track in res.json()["tracks"]["items"]
-      if artist in [artist["name"] for artist in track["artists"]]]
+      if artist.lower() in [artist["name"].lower() for artist in track["artists"]]]
 
   def request_track_info(self, track_id):
     """
@@ -68,7 +68,7 @@ class SpotifyClient:
     if res.status_code not in range(200, 300):
         return {
           "title": "Unknown",
-          "artist": "Unknown"
+          "artists": "Unknown"
         }
       
     track_info = res.json()
