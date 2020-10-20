@@ -13,11 +13,18 @@ const axios = require("axios"),
 function requestSuggestions (artist, title) {
   axios
     .post(predict_endpoint, { artist, title })
-    .then(res => console.log(res.data))
-    .catch(error => {
-      console.error(error)
+    .then(({ data: { error, recommendations} }) => {
+        if (error) console.log(error);   
+        else {
+            recommendations.forEach(({ artists, title }, i) => {
+                console.log(`Track #${i + 1}`);
+                console.log(`artists: ${artists}`);
+                console.log(`title: ${title}`);
+            });
+        }
     })
+    .catch(console.error);
 }
 
-requestSuggestions("Shakira", "Waka Waka");
+requestSuggestions("shakira", "waka waka");
 ```
