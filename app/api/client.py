@@ -27,8 +27,8 @@ class SpotifyClient:
     """
     res = requests.post(
       'https://accounts.spotify.com/api/token',
-      data={"grant_type": "client_credentials"},
-      headers={"Authorization": f"Basic {self.get_client_credentials()}"})
+      data = {"grant_type": "client_credentials"},
+      headers = {"Authorization": f"Basic {self.get_client_credentials()}"})
 
     if res.status_code not in range(200, 300):
       return False
@@ -66,23 +66,18 @@ class SpotifyClient:
     )
 
     if res.status_code not in range(200, 300):
-        return {
-          "title": "Unknown",
-          "artists": "Unknown"
-        }
-      
-    track_info = res.json()
+      title = None
+      artists = []
+    else:
+      track_info = res.json()
+      title = track_info["name"]
+      artists = [artist['name'] for artist in track_info['artists']]
 
     return {
-      "title": track_info["name"],
-      "artists": [artist['name'] for artist in track_info['artists']]
+      "title": title,
+      "artists": artists
     }
-
 
 
 client = SpotifyClient()
 client.authenticate()
-
-# if __name__ == "__main__":
-  # print(client.request_track_ids("Waka Waka", "Shakira"))
-  # print(client.request_track_info("2MuJbBWAVewREJmB8WdGJ3"))
