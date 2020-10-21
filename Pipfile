@@ -20,6 +20,9 @@ pydantic = "*"
 uvicorn = "*"
 plotly = "*"
 sklearn = "*"
+pytest = "*"
+pytest-asyncio = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.8"
