@@ -25,6 +25,7 @@ pytest-asyncio = "*"
 httpx = "*"
 sqlalchemy = "*"
 psycopg2 = "*"
+chart-studio = "*"
 
 [requires]
 python_version = "3.8"
