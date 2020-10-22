@@ -1,7 +1,9 @@
 import logging
 from random import choice
+from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 import pandas as pd
 from pydantic import BaseModel, Field, validator
 
@@ -11,28 +13,23 @@ from app.api.recommend import find_recommended_songs, track_id_in_df
 log = logging.getLogger(__name__)
 router = APIRouter()
 
+from .. import crud, models, schemas
+from ..database import SessionLocal, engine
 
-class Track(BaseModel):
-    """Use this data model to parse the request body JSON."""
+# models.Base.metadata.drop_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
-    title: str = Field(..., example="Waka Waka")
-    artist: str = Field(..., example="Shakira")
-
-    @validator('title')
-    def title_must_be_non_empty(cls, value):
-        """Validate that title is a non-empty string."""
-        assert value != "", f'title == {value}, must be non-empty string'
-        return value
-
-    @validator('artist')
-    def artist_must_be_non_empty(cls, value):
-        """Validate that artist is a non-empty string."""
-        assert value != "", f'artist == {value}, must be non-empty string'
-        return value
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
-@router.post('/predict')
-async def predict(track: Track):
+@router.post('/predict') # , response_model=List[schemas.Track])
+async def predict(track: schemas.TrackCreate, db: Session = Depends(get_db)):
     """
     Suggest a list of recommendations for the specified Track.
 
@@ -46,17 +43,45 @@ async def predict(track: Track):
     - `title`: string
     """
 
+    # Find first track id that matches the given title and artist
     track_ids = client.request_track_ids(track.title, track.artist)
     for track_id in track_ids:
-      if track_id_in_df(track_id): break
+      db_track = find_track(db, track_id)
+      if db_track: break
     else:
-      return {
-        "error": f"{track.title} by {track.artist} not found."
-      }
+      return {"error": f"{track.title} by {track.artist} not found."}
 
-    return {
-      "recommendations": [
-        client.request_track_info(recommended_track_id) 
-          for recommended_track_id in find_recommended_songs(track_id)
-        ]
-      }
+    if not db_track.suggestions:  
+      for rank, suggested_track_id in enumerate(find_recommended_songs(db_track.id)):
+        suggested_track = find_track(db, suggested_track_id)
+
+        if suggested_track:
+          crud.add_suggestion_to_track(
+            db,
+            crud.create_suggestion(db, suggested_track.id, rank),
+            db_track
+          )
+
+    suggestions = crud.get_suggestions(db, track_id)
+
+    return {"recommendations": list(
+      zip((s.title for s in suggestions),
+         ((a.name for a in s.artists) for s in suggestions))
+    )}
+
+
+def find_track(db, track_id):
+  track = crud.get_track(db, track_id)
+  if track: return
+
+  title, artist_names = client.request_track_info(track_id)
+
+  if not title or not artist_names: return None
+
+  track = crud.create_track(db, id=track_id, title=title)
+  for artist_name in artist_names:
+    artist = crud.get_artist(db, name=artist_name) or \
+      crud.create_artist(db, name=artist_name)
+    track = crud.add_artist_to_track(db, artist=artist, track=track)
+
+  return track

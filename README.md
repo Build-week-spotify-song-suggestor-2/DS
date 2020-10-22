@@ -18,8 +18,8 @@ function requestSuggestions (artist, title) {
         else {
             recommendations.forEach(({ artists, title }, i) => {
                 console.log(`Track #${i + 1}`);
-                console.log(`artists: ${artists}`);
                 console.log(`title: ${title}`);
+                console.log(`artists: ${artists.join(", ")}`);
             });
         }
     })
