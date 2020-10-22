@@ -67,16 +67,13 @@ class SpotifyClient:
 
     if res.status_code not in range(200, 300):
       title = None
-      artists = []
+      artist_names = []
     else:
       track_info = res.json()
       title = track_info["name"]
-      artists = [artist['name'] for artist in track_info['artists']]
+      artist_names = [artist['name'] for artist in track_info['artists']]
 
-    return {
-      "title": title,
-      "artists": artists
-    }
+    return (title, artist_names)
 
 
 client = SpotifyClient()
